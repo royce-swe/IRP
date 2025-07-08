@@ -58,3 +58,7 @@ class A16:
         return np.sum(
             q * p - np.array([A16.cost(q[i], i) for i in range(A16.N)])
         )
+    
+    @staticmethod
+    def gradient():
+        return
