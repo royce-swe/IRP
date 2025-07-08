@@ -1,0 +1,181 @@
+from __future__ import annotations  # built-in generics in Python 3.9+
+
+from dataclasses import dataclass
+import numpy as np
+from scipy.optimize import basinhopping
+
+# -----------------------------------------------------------------------------
+#  VARIABLE GLOSSARY
+# -----------------------------------------------------------------------------
+# x         : numpy.ndarray of length N, current guess of each player's w_i
+# x[i]      : queue share (w_i) of player i
+# x_star    : final equilibrium vector of w_i values
+# N         : number of players/users
+# B         : normalized buffer capacity
+# w_min     : minimum allowed w_i to avoid divide-by-zero
+# W         : total buffer usage = sum(x)
+# W_minus_i : sum of all w_j except x[i]
+# u_i       : utility of player i, defined by utility_i
+# d_i       : derivative ∂u_i/∂x_i used in energy computation
+# gamma     : relaxation factor for update smoothing
+# max_iter  : maximum number of sweeps before stopping
+# tol       : tolerance for convergence (ℓ¹-norm of Δx)
+# verbose   : if True, prints progress every 50 iterations
+# x0        : initial feasible point (half-full buffer for all)
+# surplus   : any small amount over capacity, redistributed equally
+# delta     : ℓ¹-norm of changes between successive x vectors
+# d_star    : dual/fake-player best response (penalty multiplier)
+# E_star    : energy E(x_star), should be ≈ 0 at equilibrium
+
+
+# -----------------------------------------------------------------------------
+#  Problem parameters
+# -----------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class GameConfig:
+    """Static parameters for Example A.14"""
+    N: int = 10          # number of users/players
+    B: float = 1.0       # normalized buffer capacity
+    w_min: float = 1e-2  # lower bound on each w_i for well-defined utility
+
+
+# -----------------------------------------------------------------------------
+#  Constraint violation function h(x)
+# -----------------------------------------------------------------------------
+
+def constraint_violation(x: np.ndarray, B: float) -> float:
+    """
+    Shared constraint function h(x) = sum(x) - B.  Should satisfy h(x) ≤ 0.
+    Returns positive violation if any.
+    """
+    return np.sum(x) - B
+
+
+# -----------------------------------------------------------------------------
+#  Utility function
+# -----------------------------------------------------------------------------
+
+def utility_i(w_i: float, W: float, B: float) -> float:
+    """Compute u_i(w_i, W) = (w_i / W) * (1 - W/B)"""
+    if W <= 0:
+        return 0.0
+    return (w_i / W) * (1.0 - W / B)
+
+
+# -----------------------------------------------------------------------------
+#  Energy-function algorithm
+# -----------------------------------------------------------------------------
+
+def energy(x: np.ndarray, cfg: GameConfig) -> float:
+    """
+    Compute energy E(x) per Report 2:
+      d_i = ∂u_i/∂x_i = (W - x_i)/W^2 - 1/B
+      lb = cfg.w_min
+      ub_i = B - (W - x_i)
+      E(x) = Σ_i [
+        (ub_i - x_i)*log(1 - d_i) if d_i ≤ 0,
+        (x_i - lb)*log(1 + d_i)   if d_i  >  0
+      ]
+    Equilibrium x* yields E(x*) ≈ 0.
+    """
+    W = np.sum(x)
+    E_val = 0.0
+    lb = cfg.w_min
+    for i in range(cfg.N):
+        xi = x[i]
+        W_minus_i = W - xi
+        di = (W - xi) / W**2 - 1.0 / cfg.B
+        ub_i = max(lb, cfg.B - W_minus_i)
+        if di <= 0:
+            E_val += (ub_i - xi) * np.log1p(-di)
+        else:
+            E_val += (xi - lb) * np.log1p(di)
+    return E_val
+
+
+# -----------------------------------------------------------------------------
+#  Solver class – iterative best-response with relaxation and basinhopping
+# -----------------------------------------------------------------------------
+
+class NashSolver:
+    """Solver for players, using basinhopping for each best-response."""
+
+    def __init__(
+        self,
+        config: GameConfig | None = None,
+        *,
+        gamma: float = 0.5,
+        max_iter: int = 10_000,
+        tol: float = 1e-8,
+        verbose: bool = False,
+        bh_iters: int = 50,
+    ):
+        # store settings
+        self.cfg = config or GameConfig()
+        self.gamma = float(np.clip(gamma, 1e-3, 1.0))
+        self.max_iter = max_iter
+        self.tol = tol
+        self.verbose = verbose
+        self.bh_iters = bh_iters  # number of basin-hopping hops
+        # initial feasible point: half-full buffer
+        self.x0 = np.full(self.cfg.N, self.cfg.B / (2 * self.cfg.N))
+
+    def _best_response(self, i: int, x: np.ndarray) -> float:
+        """Compute player i’s best w_i via basinhopping."""
+        cfg = self.cfg
+        W_minus_i = np.sum(x) - x[i]
+        def obj(w_i: float) -> float:
+            return -utility_i(w_i, W_minus_i + w_i, cfg.B)
+        low = cfg.w_min
+        high = max(cfg.w_min, cfg.B - W_minus_i)
+        minimizer_kwargs = dict(method='L-BFGS-B', bounds=[(low, high)])
+        result = basinhopping(
+            obj,
+            x0=x[i],
+            niter=self.bh_iters,
+            minimizer_kwargs=minimizer_kwargs,
+            stepsize=(high - low) / 10.0,
+            disp=False,
+        )
+        # ensure scalar return without deprecation
+        return result.x.item()
+
+    def solve(self) -> tuple[np.ndarray, int]:
+        """Run basinhopping best-response sweeps until convergence or max_iter."""
+        x = self.x0.copy()
+        for k in range(1, self.max_iter + 1):
+            x_old = x.copy()
+            for i in range(self.cfg.N):
+                w_star = self._best_response(i, x)
+                x[i] = (1 - self.gamma) * x[i] + self.gamma * w_star
+            surplus = np.sum(x) - self.cfg.B
+            if surplus > 0:
+                x -= surplus / self.cfg.N
+            delta = np.linalg.norm(x - x_old, ord=1)
+            if delta < self.tol:
+                return x, k
+        return x, self.max_iter
+
+    def get_equilibrium_for_player(self, i: int) -> float:
+        x_star, _ = self.solve()
+        return x_star[i]
+
+
+# -----------------------------------------------------------------------------
+#  Script entry-point
+# -----------------------------------------------------------------------------
+
+if __name__ == '__main__':
+    solver = NashSolver(verbose=True)
+    x_star, n_iter = solver.solve()
+    d_star = max(constraint_violation(x_star, solver.cfg.B), 0.0)
+    E_star = energy(x_star, solver.cfg)
+    np.set_printoptions(precision=17, floatmode='unique')
+    print(f"\nConverged in {n_iter} iterations")
+    print("Primal NE x* =", x_star)
+    print("Dual (fake) player d* =", d_star)
+    print("Energy E(x*) =", E_star)
+    for player in range(solver.cfg.N):
+        print(f"Player {player:2d} equilibrium w* = {solver.get_equilibrium_for_player(player)}")
+

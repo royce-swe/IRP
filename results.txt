@@ -1,0 +1,83 @@
+#75: Good, max = 500, niter = 1000, stepsize = 0.5, 0.0004% / 5.74283e-6, 0 start
+#100: Good, max = 500, niter = 1000, stepsize = 0.5, 3e-5% Error/ 5.678e-7 energy, 0 start 
+#150: Good, max = 500, niter = 1000, stepsize = 0.5/ max = 3000, niter = 1500, stepsize = 0.05, 0.00019% Error / 1.124 x 10^-5, 0 start
+#200: Decent, max = 500, niter = 1000, stepsize = 1.5, 0.0004% Error/ 0.005 energy, non 0 start
+#204.306: Decent, max = 500, niter = 1000, stepsize = 1.5, 0.02761% Error/ 0.008 energy, non 0 start
+
+
+
+=== Final Results for 75 ===
+    Quantities: [10.403848 13.035884 15.407389 17.381549 18.77133 ]
+    Sum: 75.0
+    Dual variable (d): 27.928566
+    Profit: 2878.372063
+    Energy (should be ~0): 6.75996e-05
+
+    === The paper's output ===
+    Outputs: [10.403965 13.035817 15.407354 17.381556 18.771308]
+    Sum: 75.0
+
+    ======= Error ========
+    Percent Error: 0.0004 %
+    Optimization Started from Zero
+
+=== Final Results for 100 ===
+    Quantities: [14.050085 17.798386 20.90719  23.111433 24.132906]
+    Sum: 100.0
+    Dual variable (d): 18.195672
+    Profit: 2726.461006
+    Energy (should be ~0): 9.6003e-06
+
+    === The paper's output ===
+    Outputs: [14.050088 17.798379 20.907187 23.111429 24.132916]
+    Sum: 99.999999
+
+    ======= Error ========
+    Percent Error: 3e-05 %
+    Optimization Started from Zero
+
+=== Final Results for 150 ===
+    Quantities: [23.588691 28.684323 32.021504 33.287265 32.418216]
+    Sum: 150.0
+    Dual variable (d): 7.127069
+    Profit: 2278.108554
+    Energy (should be ~0): 1.12464e-05
+
+    === The paper's output ===
+    Outputs: [23.588799 28.684248 32.021533 33.287258 32.418182]
+    Sum: 150.00002
+
+    ======= Error ========
+    Percent Error: 0.00019 %
+    Optimization Started from Zero
+
+=== Final Results for 200 ===
+    Quantities: [35.785176 40.749349 42.802372 41.966297 38.696781]
+    Sum: 199.999977
+    Dual variable (d): 0.467133
+    Profit: 1684.651978
+    Energy (should be ~0): 0.0051433249
+
+    === The paper's output ===
+    Outputs: [35.785329 40.748959 42.802485 41.966381 38.696846]
+    Sum: 200.0
+
+    ======= Error ========
+    Percent Error: 0.0004 %
+    Optimization Started from [40. 40. 40. 40. 40.  1.]
+
+=== Final Results for 204.306 ===
+    Quantities: [36.932315 41.818057 43.706861 42.659115 39.178959]
+    Sum: 204.295307
+    Dual variable (d): 5.1e-05
+    Profit: 1627.876855
+    Energy (should be ~0): 0.0086571191
+
+    === The paper's output ===
+    Outputs: [36.912 41.842 43.705 42.665 39.182]
+    Sum: 204.306
+
+    ======= Error ========
+    Percent Error: 0.02761 %
+    Optimization Started from [40.8612 40.8612 40.8612 40.8612 40.8612  1.    ]
+
