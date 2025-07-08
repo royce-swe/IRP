@@ -46,9 +46,25 @@ class A3:
     A1 = np.array([[20, 5, 3], [5, 5, -5], [3, -5, 15]])
     A2 = np.array([[11, -1], [[-1, 9]]])
     A3 = np.array([[48, 39], [39, 53]])
+    B1 = np.array([[-6, 10, 11, 20], [10, -4, -17, 9], [15, 8, -22, 21]])
+    B2 = np.array([[20, 1, -3, 12, 1], [10, -4, 8, 16, 21]])
+    B3 = np.array([[10, -2, 22, 12, 16], [9, 19, 21, -4, 20]])
+    b1 = np.array([[1], [-1], [1]])
+    b2 = np.array([[1], [0]])
+    b3 = np.array([[-1], [2]])
+
 
     @staticmethod
-    def obj_func():
-        x: npt.NDArray[np.float64]
+    def obj_func(
+            x: npt.NDArray[np.float64],
+            x_ni: npt.NDArray[np.float64],
+            A: npt.NDArray[np.float64],
+            B: npt.NDArray[np.float64],
+            b: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        obj = 0.5 * x.T @ A @ x + x.T @ (B @ x_ni + b)
+        return obj
+
+    @staticmethod
+
 
 
