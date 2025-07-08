@@ -3,12 +3,12 @@ import numpy.typing as npt
 from typing import Callable, List
 
 class A16:
-    # Problem parameters
+    #Problem parameters
     N = 5
     c = np.array([10, 8, 6, 4, 2], dtype=float)
     K = np.array([5] * N, dtype=float)
     B = np.array([1.2, 1.1, 1.0, 0.9, 0.8], dtype=float)
-    Q = 100  # Default total output
+    Q = 100  #Max total output
 
     @staticmethod
     def paper_solution() -> List[npt.NDArray[np.float64]]:
@@ -43,7 +43,7 @@ class A16:
         def obj(q_i: float, total_q: float, d: float) -> float:
             p = A16.price(total_q)
             cost = A16.cost(q_i, i)
-            return -(q_i * p - cost - d * q_i)  # Negative for minimization
+            return -(q_i * p - cost - d * q_i)
         return obj
 
     @staticmethod
@@ -57,6 +57,9 @@ class A16:
             dc = A16.c[i] + A16.K[i]**(-1 / A16.B[i]) * q_i**(1 / A16.B[i])
             return -(dp - dc - d)
         return grad
+    
+    
+    #constraint stuff
 
     @staticmethod
     def constraints() -> List[Callable[[npt.NDArray[np.float64]], float]]:
