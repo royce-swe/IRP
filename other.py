@@ -74,7 +74,3 @@ class A16:
     def g0_der(q: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         return np.ones_like(q)
 
-
-def g0(x):
-    x1, x2, x3 = x
-    return (sum[x1] + sum[x2] + sum[x3] - 20)[0]
